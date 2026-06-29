@@ -22,6 +22,13 @@ nixpkgs.overlays = [ inputs.claude-config.overlays.default ];
 environment.systemPackages = [ pkgs.claude-code ];
 ```
 
+If Homebrew's `claude-code` cask is installed, remove it; `/opt/homebrew/bin`
+otherwise shadows the Nix binary:
+
+```sh
+brew uninstall --cask claude-code
+```
+
 The Claude binary is unfree. Allow it broadly, or scope it to just this package.
 Pick one:
 
@@ -31,12 +38,6 @@ nixpkgs.config.allowUnfree = true;
 
 # or scope to just this package:
 nixpkgs.config.allowUnfreePredicate = pkg: lib.getName pkg == "claude-code";
-```
-
-```sh
-brew uninstall --cask claude-code   # /opt/homebrew/bin otherwise shadows Nix
-# local dev: build from a working copy instead of the pinned input
-darwin-rebuild switch --flake . --override-input claude-config path:/path/to/repo
 ```
 
 ## Outputs
@@ -49,6 +50,14 @@ darwin-rebuild switch --flake . --override-input claude-config path:/path/to/rep
 | `apps.update` | Rewrites the pin in `package.nix` |
 
 Systems: `aarch64-darwin`, `x86_64-darwin`.
+
+## Develop
+
+Build from a working copy instead of the pinned input:
+
+```sh
+darwin-rebuild switch --flake . --override-input claude-config path:/path/to/repo
+```
 
 ## Update
 
