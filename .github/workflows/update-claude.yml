@@ -1,0 +1,67 @@
+name: update-claude
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Channel or exact version (latest, stable, or X.Y.Z)"
+        type: string
+        default: latest
+  schedule:
+    - cron: "0 7 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-claude
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: macos-latest
+    env:
+      NIXPKGS_ALLOW_UNFREE: "1"
+      CHANNEL: ${{ inputs.channel || 'latest' }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Bump the pin
+        id: bump
+        run: |
+          nix run .#update -- "$CHANNEL"
+          if git diff --quiet -- package.nix; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Already current — nothing to do."
+          else
+            version="$(sed -n 's/.*version = "\([^"]*\)".*/\1/p' package.nix | head -n1)"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify it builds
+        if: steps.bump.outputs.changed == 'true'
+        run: nix build --impure .#claude-code
+
+      - name: Open and merge PR
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          branch="automated/claude-${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -am "claude: update to ${VERSION}"
+          git push -f -u origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "claude: update to ${VERSION}" \
+            --body "Automated pin bump to \`${VERSION}\`, verified with \`nix build .#claude-code\`."
+          gh pr merge "$branch" --squash --delete-branch
