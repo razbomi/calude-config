@@ -9,7 +9,7 @@ self-updating brew/npm installs.
 
 ```sh
 nix run .#claude-code -- --version
-nix build .#claude-code            # binary at ./result/bin/claude
+nix build .#claude-code
 ```
 
 ## Install (nix-darwin)
