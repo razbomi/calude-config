@@ -23,6 +23,8 @@ nixpkgs.overlays = [ inputs.claude-config.overlays.default ];
 environment.systemPackages = [ pkgs.claude-code ];
 ```
 
+The Claude binary is unfree, so `allowUnfree` is required.
+
 ```sh
 brew uninstall --cask claude-code   # /opt/homebrew/bin otherwise shadows Nix
 # local dev: build from a working copy instead of the pinned input
@@ -38,10 +40,7 @@ darwin-rebuild switch --flake . --override-input claude-config path:/path/to/rep
 | `overlays.default` | Adds `claude-code` to nixpkgs |
 | `apps.update` | Rewrites the pin in `package.nix` |
 
-Systems: `aarch64-darwin`, `x86_64-darwin`. The binary is unfree; the overlay
-install needs `allowUnfree` in your config (set in the snippet above). The flake
-allows it for its own `packages` outputs, so `nix run`/`nix build` here need no
-extra flags.
+Systems: `aarch64-darwin`, `x86_64-darwin`.
 
 ## Update
 
