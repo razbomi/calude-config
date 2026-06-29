@@ -1,8 +1,10 @@
 # Claude Code on Nix
 
-Claude Code self-updates in place. The Nix store is read-only and Nix should own
-the version, so this pins an exact build, disables the updater
-(`DISABLE_AUTOUPDATER=1`), and bumps through git.
+Claude Code's native binary, packaged as a Nix flake for macOS. The version is
+pinned, so installs are reproducible and every update is a git commit you can
+review and roll back. It does this by fixing the version and checksums in
+`package.nix` and disabling the bundled autoupdater (`DISABLE_AUTOUPDATER=1`); the
+Nix store is read-only, so the binary can't update itself in place.
 
 ## Run
 
